@@ -1,0 +1,57 @@
+﻿@page "/admin/add-role"
+@attribute [Authorize(Roles = "Admin")]
+@inject RoleManager<IdentityRole> roleManager
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer 
+
+<h3>Lägg till ny roll</h3>
+
+<div class="mb-3">
+    <label class="form-label">Rollnamn:</label>
+    <input type="text" class="form-control" @bind="newRoleName" />
+</div>
+
+<button class="btn btn-primary" @onclick="AddRole">Lägg till roll</button>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <p class="text-success mt-3">@message</p>
+}
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p class="text-danger mt-3">@errorMessage</p>
+}
+
+@code {
+    private string newRoleName = string.Empty;
+    private string? message;
+    private string? errorMessage;
+
+    private async Task AddRole()
+    {
+        if (!string.IsNullOrWhiteSpace(newRoleName))
+        {
+            try
+            {
+                var result = await roleManager.CreateAsync(new IdentityRole(newRoleName));
+                if (result.Succeeded)
+                {
+                    message = $"Rollen '{newRoleName}' har lagts till.";
+                    newRoleName = string.Empty;
+                }
+                else
+                {
+                    errorMessage = "Ett fel uppstod vid tillägg av rollen.";
+                }
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Ett fel uppstod: {ex.Message}";
+            }
+        }
+        else
+        {
+            errorMessage = "Ange ett rollnamn.";
+        }
+    }
+}

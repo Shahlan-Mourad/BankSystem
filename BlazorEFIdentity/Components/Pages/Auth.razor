@@ -5,35 +5,35 @@
 @inject RoleManager<IdentityRole> roleManager
 @inject AuthenticationStateProvider authenticationStateProvider
 @inject NavigationManager NavigationManager
+@rendermode InteractiveServer 
 
-@attribute [Authorize(Roles = "Admin")]
+@attribute [Authorize]
 
 <PageTitle>Auth</PageTitle>
 
 <h1>You are authenticated</h1>
 
-<AuthorizeView>
+<AuthorizeView Roles="Admin">
     Hello @context.User.Identity?.Name!
     <p>
-        Is handle @user.Handle correct?
-
         @if (isAdmin)
         {
-            <p>Admin</p>
             <ul>
                 @foreach (var u in users)
                 {
                     <li>
                         @u.UserName
-                        <button class="btn btn-sm btn-primary btn-margin-right" @onclick="async () => ShowRoleOptions(u.Id)">Hantera roller</button>
-                        <button class="btn btn-sm btn-danger" @onclick="async () => { await DeleteUser(u.Id); }">Ta bort</button>
+                        <button class="btn btn-primary" @onclick="async () => ShowRoleOptions(u.Id)">Hantera roller</button>
+                        <button class="btn btn-primary" @onclick="async () => { await DeleteUser(u.Id); }">Ta bort</button>
 
                         @if (showRoleOptions && selectedUserId == u.Id)
                         {
                             <div>
                                 <select @bind="selectedRole">
-                                    <option value="Admin">Admin</option>
-                                    <option value="User">User</option>
+                                    @foreach (var r in roles)
+                                    { 
+                                        <option value="@r.Name">@r.Name</option>
+                                    }
                                 </select>
                                 <button class="btn btn-sm btn-success" @onclick="async () => await AssignRole(u.Id)">Spara</button>
                                 <button class="btn btn-sm btn-secondary" @onclick="HideRoleOptions">Avbryt</button>
@@ -48,19 +48,30 @@
                 {
                     <li>
                         @role.Name
-                        <button class="btn btn-sm btn-danger btn-margin-right" @onclick="async () => { await DeleteRole(role.Id); }">Ta bort</button>
+                        <button class="btn btn-delete" @onclick="async () => { await DeleteRole(role.Id); }">Ta bort</button>
                     </li>
                 }
             </ul>
-            <h2>Lägg till roll</h2>
-            <input type="text" @bind="newRoleName" />
-            <button class="btn btn-sm btn-primary btn-margin-right" @onclick="async () => { await AddRole(); }">Lägg till</button>
         }
+
+        <h3>Admin-verktyg</h3>
+        <ul>
+            <li>
+                <a href="/admin/deposit" class="a">Sätt in pengar på konto</a>
+            </li>
+            <li>
+                <a href="/admin/add-role" class="a">Lägg till roll</a>
+            </li>
+        </ul>
     </p>
 </AuthorizeView>
 
+<AuthorizeView Roles="User">
+   <BankAccount/> 
+</AuthorizeView>
+
 @code {
-    private ApplicationUser user;
+    private ApplicationUser? user;
     private List<ApplicationUser> users = new();
     private List<IdentityRole> roles = new();
     private string newRoleName = string.Empty;
@@ -69,33 +80,28 @@
     private string selectedUserId = string.Empty;
     private string selectedRole = string.Empty;
 
-    private void ShowRoleOptions(string userId)
-    {
-        selectedUserId = userId;
-        showRoleOptions = true;
-    }
-
-    private void HideRoleOptions()
-    {
-        showRoleOptions = false;
-        selectedUserId = string.Empty;
-        selectedRole = string.Empty;
-    }
-
     protected override async Task OnInitializedAsync()
     {
         var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
         user = await userManager.GetUserAsync(authState.User);
         users = await userManager.Users.ToListAsync();
         roles = await roleManager.Roles.ToListAsync();
-
-        isAdmin = await userManager.IsInRoleAsync(user, "Admin");
-        if (!isAdmin)
+        if (user != null)
         {
-            NavigationManager.NavigateTo("/"); // Omdirigera om användaren inte är admin
+            isAdmin = await userManager.IsInRoleAsync(user, "Admin");
         }
     }
-
+    private void ShowRoleOptions(string userId)
+    {
+        selectedUserId = userId;
+        showRoleOptions = true;
+    }
+    private void HideRoleOptions()
+    {
+        showRoleOptions = false;
+        selectedUserId = string.Empty;
+        selectedRole = string.Empty;
+    }
     private async Task AssignRole(string userId)
     {
         try
@@ -117,7 +123,6 @@
             Console.Error.WriteLine($"Error assigning role: {ex.Message}");
         }
     }
-
     private async Task DeleteUser(string userId)
     {
         var userToDelete = await userManager.FindByIdAsync(userId);
@@ -128,7 +133,6 @@
             StateHasChanged();
         }
     }
-
     private async Task DeleteRole(string roleId)
     {
         var roleToDelete = await roleManager.FindByIdAsync(roleId);
@@ -136,17 +140,6 @@
         {
             await roleManager.DeleteAsync(roleToDelete);
             roles = await roleManager.Roles.ToListAsync();
-            StateHasChanged();
-        }
-    }
-
-    private async Task AddRole()
-    {
-        if (!string.IsNullOrWhiteSpace(newRoleName))
-        {
-            await roleManager.CreateAsync(new IdentityRole(newRoleName));
-            roles = await roleManager.Roles.ToListAsync();
-            newRoleName = string.Empty;
             StateHasChanged();
         }
     }

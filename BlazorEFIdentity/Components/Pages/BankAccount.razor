@@ -1,0 +1,187 @@
+﻿@page "/bank-account"
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+@using BlazorEFIdentity.Models
+@using BlazorEFIdentity.Services
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager NavigationManager
+@inject BankAccountService BankAccountService
+@rendermode InteractiveServer 
+
+@attribute [Authorize]
+
+<h3>Profil</h3>
+
+<AuthorizeView Roles="User">
+    @if (user != null)
+    {
+        <p>Välkommen, @user.UserName!</p>
+
+        <h4>Dina Konton</h4>
+        <div class="account-list">
+            @foreach (var account in accounts)
+            {
+                <div class="account-item">
+                    <p>@account.AccountName (@account.AccountNumber): @account.Balance</p>
+                    <button class="btn btn-primary" @onclick="async () => await ShowTransactions(account.Id)">Visa transaktioner</button>
+                </div>
+            }
+        </div>
+
+        <h4>Skapa Nytt Konto</h4>
+        <div class="create-account">
+            <input type="text" placeholder="Kontonamn" @bind="newAccountName" />
+            <input type="text" placeholder="Kontonummer" @bind="newAccountNumber" />
+            <select @bind="newAccountType">
+                <option value="">Välj kontotyp</option>
+                <option value="Personkonto">Personkonto</option>
+                <option value="Sparkonto">Sparkonto</option>
+                <option value="ISK">ISKkonto</option>
+            </select>
+            <button class="btn btn-primary" @onclick="async () => await CreateAccount()">Skapa Konto</button>
+        </div>
+
+        @if (selectedAccount != null)
+        {
+            <h3>Transaktioner för @selectedAccount.AccountName</h3>
+            <div class="transaction-list">
+                @foreach (var transaction in selectedAccount.Transactions)
+                {
+                    <div class="transaction-item">
+                        @transaction.Date.ToShortDateString() - @transaction.Message: @transaction.Amount
+                    </div>
+                }
+            </div>
+
+            <h4>Lägg till ny transaktion</h4>
+            <div class="add-transaction">
+                <input type="text" placeholder="Beskrivning" @bind="newTransactionDescription" />
+                <input type="number" placeholder="Belopp" @bind="newTransactionAmount" />
+                <button class="btn btn-primary" @onclick="async () => await AddTransaction()">Lägg till</button>
+            </div>
+
+            <h4>Överföring mellan konton</h4>
+            <div class="transfer-funds">
+                <select @bind="fromAccountId">
+                    <option value="">Välj från konto</option>
+                    @foreach (var account in accounts)
+                    {
+                        <option value="@account.Id">@account.AccountName (@account.AccountNumber)</option>
+                    }
+                </select>
+                <select @bind="toAccountId">
+                    <option value="">Välj till konto</option>
+                    @foreach (var account in accounts)
+                    {
+                        <option value="@account.Id">@account.AccountName (@account.AccountNumber)</option>
+                    }
+                </select>
+                <input type="number" placeholder="Belopp" @bind="transferAmount" />
+                <input type="text" placeholder="Meddelande" @bind="transferMessage" />
+                <button class="btn btn-primary" @onclick="async () => await TransferFunds()">Överför</button>
+                @if (!string.IsNullOrEmpty(transferMessage))
+                {
+                    <p class="transfer-message">@transferMessage</p>
+                }
+            </div>
+        }
+    }
+</AuthorizeView>
+    
+
+@code {
+    private List<Account> accounts;
+    private Account selectedAccount;
+    private ApplicationUser user;
+    private string newTransactionDescription;
+    private decimal newTransactionAmount;
+    private string newAccountName;
+    private string newAccountNumber;
+    private string newAccountType;
+    private int fromAccountId;
+    private int toAccountId;
+    private decimal transferAmount;
+    private string transferMessage;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        user = await UserManager.GetUserAsync(authState.User);
+        accounts = await BankAccountService.GetAccountsAsync();
+    }
+    private async Task ShowTransactions(int accountId)
+    {
+        selectedAccount = await BankAccountService.GetAccountByIdAsync(accountId);
+    }
+    private async Task AddTransaction()
+    {
+        if (selectedAccount != null && !string.IsNullOrWhiteSpace(newTransactionDescription) && newTransactionAmount != 0)
+        {
+            var transaction = new Transaction
+            {
+                Date = DateTime.Now,
+                Amount = newTransactionAmount,
+                Message = newTransactionDescription,
+                AccountId = selectedAccount.Id,
+                Account = selectedAccount
+            };
+            await BankAccountService.AddTransactionAsync(selectedAccount.Id, transaction);
+            newTransactionDescription = string.Empty;
+            newTransactionAmount = 0;
+            accounts = await BankAccountService.GetAccountsAsync();
+            StateHasChanged(); 
+        }
+    }
+    private async Task CreateAccount()
+    {
+        if (!string.IsNullOrWhiteSpace(newAccountName) && 
+            !string.IsNullOrWhiteSpace(newAccountNumber) && 
+            !string.IsNullOrWhiteSpace(newAccountType))
+        {
+            try
+            {
+                var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+                var user = await UserManager.GetUserAsync(authState.User);
+                var applicationUserId = user.Id;
+
+                await BankAccountService.CreateAccountAsync(newAccountName, newAccountType, newAccountNumber, applicationUserId);
+
+                newAccountName = string.Empty;
+                newAccountNumber = string.Empty;
+                newAccountType = string.Empty;
+
+                accounts = await BankAccountService.GetAccountsAsync();
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+    }
+    private async Task TransferFunds()
+    {
+        if (fromAccountId > 0 && toAccountId > 0 && fromAccountId != toAccountId && transferAmount > 0)
+        {
+            bool success = await BankAccountService.TransferFundsAsync(fromAccountId, toAccountId, transferAmount, transferMessage);
+            if (success)
+            {
+                transferMessage = "Överföring lyckades.";
+            }
+            else
+            {
+                transferMessage = "Överföring misslyckades. Kontrollera saldot på källkontot.";
+            }
+            transferAmount = 0;
+            fromAccountId = 0;
+            toAccountId = 0;
+            accounts = await BankAccountService.GetAccountsAsync(); 
+            StateHasChanged();
+        }
+        else
+        {
+            transferMessage = "Kontrollera att alla fält är korrekt ifyllda och att beloppet är positivt.";
+        }
+    }
+}

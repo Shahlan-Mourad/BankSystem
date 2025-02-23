@@ -176,8 +176,16 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9BcHAucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[/Users/shahlanmourad/Documents/dotnet 2/FridayDemoV6/BlazorEFIdentity/Components/Pages/Admin.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9BZG1pbi5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [/Users/shahlanmourad/Documents/dotnet 2/FridayDemoV6/BlazorEFIdentity/Components/Pages/Auth.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9BdXRoLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/shahlanmourad/Documents/dotnet 2/FridayDemoV6/BlazorEFIdentity/Components/Pages/BankAccount.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9CYW5rQWNjb3VudC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/shahlanmourad/Documents/dotnet 2/FridayDemoV6/BlazorEFIdentity/Components/Pages/Error.razor]
@@ -186,6 +194,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [/Users/shahlanmourad/Documents/dotnet 2/FridayDemoV6/BlazorEFIdentity/Components/Pages/Home.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Ib21lLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/shahlanmourad/Documents/dotnet 2/FridayDemoV6/BlazorEFIdentity/Components/Pages/Roles.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Sb2xlcy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/shahlanmourad/Documents/dotnet 2/FridayDemoV6/BlazorEFIdentity/Components/Pages/Weather.razor]

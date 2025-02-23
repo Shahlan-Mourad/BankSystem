@@ -9,7 +9,6 @@ namespace BlazorEFIdentity.Data
         public string? Handle { get; set; }
         public string? SocialSecurityNr { get; set; }
         public string? Address { get; set; }
-        public string? PhoneNumber { get; set; }
-        public List<Account> Accounts { get; set; }
+        public List<Account> Accounts { get; set; } = new List<Account>(); 
     }
 }

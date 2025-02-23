@@ -1,6 +1,7 @@
 using BlazorEFIdentity.Components;
 using BlazorEFIdentity.Components.Account;
 using BlazorEFIdentity.Data;
+using BlazorEFIdentity.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.Identity;
@@ -17,11 +18,13 @@ namespace BlazorEFIdentity
             // Add services to the container.
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
+                
 
             builder.Services.AddCascadingAuthenticationState();
             builder.Services.AddScoped<IdentityUserAccessor>();
             builder.Services.AddScoped<IdentityRedirectManager>();
             builder.Services.AddScoped<AuthenticationStateProvider, ServerAuthenticationStateProvider>();
+            builder.Services.AddScoped<BankAccountService>();
 
             builder.Services.AddAuthorization();
             builder.Services.AddAuthentication(options =>
@@ -48,6 +51,7 @@ namespace BlazorEFIdentity
 
 
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+            
 
             var app = builder.Build();
 
@@ -64,17 +68,17 @@ namespace BlazorEFIdentity
             }
 
             app.UseHttpsRedirection();
-
             app.UseStaticFiles();
             app.UseAntiforgery();
 
             app.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode();
+                
 
             // Add additional endpoints required by the Identity /Account Razor components.
             app.MapAdditionalIdentityEndpoints();
-
             
+
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;

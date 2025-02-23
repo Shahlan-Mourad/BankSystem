@@ -14,7 +14,7 @@ public class ApplicationDbContextSeed
                 await roleManager.CreateAsync(new IdentityRole(role));
             }
         }
-
+        
         // Skapa administratörsanvändaren om den inte finns
         string adminEmail = "admin@admin.se";
         string adminPassword = "Abc123!";
@@ -33,8 +33,6 @@ public class ApplicationDbContextSeed
                 await userManager.AddToRoleAsync(adminUser, "Admin");
             }
         }
-
-        
     }
 }
 

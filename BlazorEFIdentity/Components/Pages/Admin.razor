@@ -1,0 +1,101 @@
+﻿@page "/admin/deposit"
+@using BlazorEFIdentity.Services
+@attribute [Authorize(Roles = "Admin")]
+@inject BankAccountService BankAccountService
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer 
+
+<h3>Sätt in pengar på konto</h3>
+
+@if (accounts != null)
+{
+    <div>
+        <label>Välj konto:</label>
+        <select @bind="selectedAccountId">
+            <option value="" class="money">Välj ett konto</option>
+            @foreach (var account in accounts)
+            {
+                <option value="@account.Id">@account.AccountName (@account.AccountNumber) - Saldo: @account.Balance </option>
+            }
+        </select>
+    </div>
+
+    <div>
+        <label>Belopp:</label>
+        <input type="number" class="money" @bind="depositAmount" />
+    </div>
+
+    <button class="money-bu" @onclick="Deposit">Sätt in pengar</button>
+
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <p class="text-success">@message</p>
+    }
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <p class="text-danger">@errorMessage</p>
+    }
+}
+else
+{
+    <p>Laddar konton...</p>
+}
+
+@code {
+    private List<Account> accounts = new List<Account>();
+    private int selectedAccountId;
+    private decimal depositAmount;
+    private string? message;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            accounts = await BankAccountService.GetAccountsAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ett fel uppstod vid hämtning av konton: {ex.Message}";
+        }
+    }
+
+    private async Task Deposit()
+    {
+        if (selectedAccountId <= 0)
+        {
+            errorMessage = "Välj ett konto.";
+            return;
+        }
+
+        if (depositAmount <= 0)
+        {
+            errorMessage = "Ange ett giltigt belopp (större än 0).";
+            return;
+        }
+
+        try
+        {
+            bool success = await BankAccountService.DepositToAccountAsync(selectedAccountId, depositAmount);
+            if (success)
+            {
+                var account = accounts.FirstOrDefault(a => a.Id == selectedAccountId);
+                if (account != null)
+                {
+                    account.Balance += depositAmount; // Uppdatera saldo lokalt
+                }
+
+                message = $"Pengarna har satts in på kontot. Nytt saldo: {account.Balance}";
+                errorMessage = string.Empty;
+            }
+            else
+            {
+                errorMessage = "Kontot kunde inte hittas.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ett fel uppstod: {ex.Message}";
+        }
+    }
+}
