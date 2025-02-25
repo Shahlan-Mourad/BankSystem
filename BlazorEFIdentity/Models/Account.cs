@@ -18,5 +18,5 @@ public class Account
     public string ApplicationUserId { get; set; } = string.Empty;
     [ForeignKey("ApplicationUserId ")]
     public ApplicationUser? ApplicationUser { get; set; }
-     public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>(); // Initiera med en tom lista
+    public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>(); // Initiera med en tom lista
 }

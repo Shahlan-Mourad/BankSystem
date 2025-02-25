@@ -16,7 +16,7 @@
 <AuthorizeView Roles="User">
     @if (user != null)
     {
-        <p>Välkommen, @user.UserName!</p>
+        <p>Välkommen, @user.Handle!</p>
 
         <h4>Dina Konton</h4>
         <div class="account-list">
@@ -25,6 +25,56 @@
                 <div class="account-item">
                     <p>@account.AccountName (@account.AccountNumber): @account.Balance</p>
                     <button class="btn btn-primary" @onclick="async () => await ShowTransactions(account.Id)">Visa transaktioner</button>
+                </div>
+            }
+            @if (selectedAccount != null)
+            {
+            <h3>Transaktioner för @selectedAccount.AccountName</h3>
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Datum</th>
+                            <th scope="col">Meddelande</th>
+                            <th scope="col">Belopp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var transaction in selectedAccount.Transactions.ToList())
+                        {
+                            <tr>
+                                <th scope="row">@(selectedAccount.Transactions.ToList().IndexOf(transaction) + 1)</th>
+                                <td>@transaction.Date.ToShortDateString()</td>
+                                <td>@transaction.Message</td>
+                                <td>@transaction.Amount.ToString("N2") Kr</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <h4>Överföring mellan konton</h4>
+                <div class="transfer-funds">
+                    <select @bind="fromAccountId">
+                        <option value="">Välj från konto</option>
+                        @foreach (var account in accounts)
+                        {
+                            <option value="@account.Id">@account.AccountName (@account.AccountNumber)</option>
+                        }
+                    </select>
+                    <select @bind="toAccountId">
+                        <option value="">Välj till konto</option>
+                        @foreach (var account in accounts)
+                        {
+                            <option value="@account.Id">@account.AccountName (@account.AccountNumber)</option>
+                        }
+                    </select>
+                    <input type="number" placeholder="Belopp" @bind="transferAmount" />
+                    <input type="text" placeholder="Meddelande" @bind="transferMessage" />
+                    <button class="btn btn-primary" @onclick="async () => await TransferFunds()">Överför</button>
+                    @if (!string.IsNullOrEmpty(transferMessage))
+                    {
+                        <p class="transfer-message">@transferMessage</p>
+                    }
                 </div>
             }
         </div>
@@ -42,50 +92,7 @@
             <button class="btn btn-primary" @onclick="async () => await CreateAccount()">Skapa Konto</button>
         </div>
 
-        @if (selectedAccount != null)
-        {
-            <h3>Transaktioner för @selectedAccount.AccountName</h3>
-            <div class="transaction-list">
-                @foreach (var transaction in selectedAccount.Transactions)
-                {
-                    <div class="transaction-item">
-                        @transaction.Date.ToShortDateString() - @transaction.Message: @transaction.Amount
-                    </div>
-                }
-            </div>
-
-            <h4>Lägg till ny transaktion</h4>
-            <div class="add-transaction">
-                <input type="text" placeholder="Beskrivning" @bind="newTransactionDescription" />
-                <input type="number" placeholder="Belopp" @bind="newTransactionAmount" />
-                <button class="btn btn-primary" @onclick="async () => await AddTransaction()">Lägg till</button>
-            </div>
-
-            <h4>Överföring mellan konton</h4>
-            <div class="transfer-funds">
-                <select @bind="fromAccountId">
-                    <option value="">Välj från konto</option>
-                    @foreach (var account in accounts)
-                    {
-                        <option value="@account.Id">@account.AccountName (@account.AccountNumber)</option>
-                    }
-                </select>
-                <select @bind="toAccountId">
-                    <option value="">Välj till konto</option>
-                    @foreach (var account in accounts)
-                    {
-                        <option value="@account.Id">@account.AccountName (@account.AccountNumber)</option>
-                    }
-                </select>
-                <input type="number" placeholder="Belopp" @bind="transferAmount" />
-                <input type="text" placeholder="Meddelande" @bind="transferMessage" />
-                <button class="btn btn-primary" @onclick="async () => await TransferFunds()">Överför</button>
-                @if (!string.IsNullOrEmpty(transferMessage))
-                {
-                    <p class="transfer-message">@transferMessage</p>
-                }
-            </div>
-        }
+        
     }
 </AuthorizeView>
     
@@ -103,6 +110,7 @@
     private int toAccountId;
     private decimal transferAmount;
     private string transferMessage;
+ 
     
     protected override async Task OnInitializedAsync()
     {
